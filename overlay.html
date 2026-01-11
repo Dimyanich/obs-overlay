@@ -106,17 +106,23 @@ const overlay = document.getElementById("overlay");
 const CACHE_VERSION = Date.now();
 let prevAlive = [];
 
-// Загружаем state, если его нет — создаём дефолтное
+// Роли для overlay
+const roles = {
+  "mafia": "roles/mafia.png",
+  "sheriff": "roles/sheriff.png",
+  "don": "roles/don.png"
+  // "peaceful" не отображаем
+};
+
+// Загружаем state, если нет — создаём дефолт
 function loadState() {
   let state = JSON.parse(localStorage.getItem("state"));
   if (!state) {
-    state = {
-      players: playersData.map((p, i) => ({
-        playerIndex: i,
-        alive: true,
-        role: "мирный"
-      }))
-    };
+    state = { players: playersData.map((p, i) => ({
+      playerIndex: i,
+      alive: true,
+      role: "peaceful"
+    }))};
     localStorage.setItem("state", JSON.stringify(state));
   }
   return state;
@@ -152,8 +158,8 @@ function render() {
       setTimeout(() => ghost.remove(), 2600);
     }
 
-    // Роль
-    if (p.role && p.role !== "мирный") {
+    // Роль (только если не peaceful)
+    if (p.role && p.role !== "peaceful" && roles[p.role]) {
       const roleImg = document.createElement("img");
       roleImg.className = "role";
       roleImg.src = roles[p.role];
