@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>OBS Overlay</title>
-
 <link href="https://fonts.googleapis.com/css2?family=Raleway:900&display=swap" rel="stylesheet">
-
 <style>
 html, body {
   margin: 0;
@@ -13,8 +11,6 @@ html, body {
   background: transparent;
   overflow: hidden;
 }
-
-/* ПАНЕЛЬ */
 .overlay {
   position: absolute;
   bottom: 0;
@@ -25,8 +21,6 @@ html, body {
   align-items: center;
   background: rgba(0,0,0,0.82);
 }
-
-/* КАРТОЧКА ИГРОКА */
 .player {
   width: 192px;
   display: flex;
@@ -35,14 +29,11 @@ html, body {
   position: relative;
   color: #fff;
 }
-
-/* ФОТО */
 .photo-wrap {
   position: relative;
   width: 110px;
   height: 110px;
 }
-
 .photo {
   width: 110px;
   height: 110px;
@@ -50,12 +41,9 @@ html, body {
   border-radius: 12px;
   transition: filter 0.4s ease;
 }
-
 .dead .photo {
   filter: grayscale(100%) brightness(0.35);
 }
-
-/* ИКОНКА РОЛИ */
 .role {
   position: absolute;
   top: 6px;
@@ -64,8 +52,6 @@ html, body {
   height: 26px;
   pointer-events: none;
 }
-
-/* ИМЯ */
 .name {
   margin-top: 6px;
   font-family: 'Raleway', sans-serif;
@@ -78,8 +64,7 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-/* 👻 ДУША-ДЫМОК */
+/* Душа-призрак */
 .ghost {
   position: absolute;
   top: 0;
@@ -89,59 +74,41 @@ html, body {
   object-fit: cover;
   border-radius: 50%;
   pointer-events: none;
-  filter:
-    grayscale(100%)
-    brightness(2.6)
-    blur(6px);
+  filter: grayscale(100%) brightness(2.6) blur(6px);
   opacity: 0.55;
   mix-blend-mode: screen;
   animation: soulFly 2.6s ease-out forwards;
 }
-
-/* АНИМАЦИЯ ДУШИ */
 @keyframes soulFly {
-  0% {
-    transform: translate(0, 0) scale(1) rotate(0deg);
-    opacity: 0.55;
-    filter: blur(4px);
-  }
-
-  30% {
-    transform: translate(-12px, -60px) scale(1.15) rotate(-6deg);
-    opacity: 0.45;
-  }
-
-  60% {
-    transform: translate(14px, -120px) scale(1.35) rotate(8deg);
-    opacity: 0.3;
-  }
-
-  100% {
-    transform: translate(-6px, -210px) scale(1.55) rotate(14deg);
-    opacity: 0;
-    filter: blur(14px);
-  }
+  0% { transform: translate(0,0) scale(1) rotate(0deg); opacity:0.55; filter: blur(4px); }
+  30% { transform: translate(-12px,-60px) scale(1.15) rotate(-6deg); opacity:0.45; }
+  60% { transform: translate(14px,-120px) scale(1.35) rotate(8deg); opacity:0.3; }
+  100% { transform: translate(-6px,-210px) scale(1.55) rotate(14deg); opacity:0; filter: blur(14px); }
 }
 </style>
 </head>
-
 <body>
-
 <div class="overlay" id="overlay"></div>
 
 <script src="players.js"></script>
-
 <script>
 const overlay = document.getElementById("overlay");
 const CACHE_VERSION = Date.now();
 let prevAlive = [];
 
-function load() {
-  return JSON.parse(localStorage.getItem("state"));
+// Функция получения state
+function loadState() {
+  let state = JSON.parse(localStorage.getItem("state"));
+  if (!state) {
+    // Инициализация по умолчанию
+    state = { players: playersData.map((p, i) => ({ playerIndex: i, alive: true, role: "мирный" })) };
+    localStorage.setItem("state", JSON.stringify(state));
+  }
+  return state;
 }
 
 function render() {
-  const state = load();
+  const state = loadState();
   if (!state) return;
 
   overlay.innerHTML = "";
@@ -161,7 +128,7 @@ function render() {
     img.src = data.img + "?v=" + CACHE_VERSION;
     photoWrap.appendChild(img);
 
-    /* 👻 душа: жив → мёртв */
+    // Призрак, если игрок только что умер
     if (prevAlive[i] === true && p.alive === false) {
       const ghost = document.createElement("img");
       ghost.className = "ghost";
@@ -170,10 +137,10 @@ function render() {
       setTimeout(() => ghost.remove(), 2600);
     }
 
-    if (p.role && p.role !== "peaceful") {
+    if (p.role && p.role !== "мирный") {
       const role = document.createElement("img");
       role.className = "role";
-      role.src = `roles/${p.role}.png`;
+      role.src = roles[p.role];
       photoWrap.appendChild(role);
     }
 
@@ -191,6 +158,5 @@ function render() {
 setInterval(render, 400);
 render();
 </script>
-
 </body>
 </html>
