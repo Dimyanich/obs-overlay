@@ -2,177 +2,139 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Control Panel</title>
-
+<title>OBS Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:900&display=swap" rel="stylesheet">
 <style>
-* {
-  box-sizing: border-box;
-}
-
 body {
-  margin: 0;
-  padding: 8px;
-  background: #0e0e0e;
+  font-family: 'Raleway', sans-serif;
+  background: #222;
   color: #fff;
-  font-family: Arial, sans-serif;
+  padding: 10px;
 }
-
 h2 {
-  margin: 0 0 6px;
-  font-size: 15px;
-  text-align: center;
+  margin-top: 0;
 }
-
-.player {
-  display: grid;
-  grid-template-columns: 32px 1.4fr 1fr 64px;
-  gap: 6px;
+.player-row {
+  display: flex;
   align-items: center;
-  background: #1b1b1b;
-  padding: 5px;
-  border-radius: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
-
-.slot {
-  text-align: center;
-  font-size: 12px;
-  opacity: 0.6;
-}
-
-select {
-  width: 100%;
-  padding: 4px;
-  font-size: 12px;
+.player-row img {
+  width: 40px;
+  height: 40px;
   border-radius: 6px;
-  border: none;
-  background: #2a2a2a;
-  color: #fff;
+  margin-right: 6px;
 }
-
-button {
-  padding: 5px;
-  font-size: 12px;
-  font-weight: bold;
-  border: none;
-  border-radius: 6px;
+.player-row select, .player-row button {
+  margin-right: 6px;
   cursor: pointer;
 }
-
-.alive {
-  background: #2ecc71;
-  color: #000;
-}
-
-.dead {
-  background: #e74c3c;
+button {
+  background: #444;
   color: #fff;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
-
-.reset {
-  margin-top: 6px;
-  width: 100%;
-  padding: 8px;
-  font-size: 13px;
-  border-radius: 8px;
-  background: #3498db;
+button:hover {
+  background: #666;
+}
+select {
+  background: #333;
   color: #fff;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
 }
 </style>
 </head>
-
 <body>
 
-<h2>Управление</h2>
+<h2>Управление игроками</h2>
 
-<div id="players"></div>
+<!-- Контейнер для строк игроков -->
+<div id="players-container"></div>
 
-<button class="reset" onclick="newGame()">Новая игра</button>
-
+<!-- Подключаем players.js -->
 <script src="players.js"></script>
 
 <script>
-const box = document.getElementById("players");
-
-function load() {
-  return JSON.parse(localStorage.getItem("state"));
+/* === Инициализация state === */
+function loadState() {
+  let state = JSON.parse(localStorage.getItem("state"));
+  if (!state) {
+    // дефолт: все игроки alive и мирные
+    state = { players: playersData.map((p, i) => ({
+      playerIndex: i,
+      alive: true,
+      role: "мирный"
+    }))};
+    localStorage.setItem("state", JSON.stringify(state));
+  }
+  return state;
 }
 
-function save(state) {
+function saveState(state) {
   localStorage.setItem("state", JSON.stringify(state));
-  render();
 }
 
-function render() {
-  box.innerHTML = "";
-  const state = load();
+/* === Рендер панели управления === */
+function renderControl() {
+  const container = document.getElementById("players-container");
+  const state = loadState();
+  container.innerHTML = "";
 
   state.players.forEach((p, i) => {
+    const data = playersData[p.playerIndex];
+
     const row = document.createElement("div");
-    row.className = "player";
+    row.className = "player-row";
 
-    const slot = document.createElement("div");
-    slot.className = "slot";
-    slot.textContent = i + 1;
+    // Фото игрока
+    const img = document.createElement("img");
+    img.src = data.img;
 
-    const playerSel = document.createElement("select");
-    playersData.forEach((pl, idx) => {
-      const opt = document.createElement("option");
-      opt.value = idx;
-      opt.textContent = pl.name;
-      if (idx === p.playerIndex) opt.selected = true;
-      playerSel.appendChild(opt);
-    });
-    playerSel.onchange = e => {
-      p.playerIndex = Number(e.target.value);
-      save(state);
-    };
+    // Имя
+    const name = document.createElement("span");
+    name.textContent = data.name;
 
-    const roleSel = document.createElement("select");
-    [
-      { v: "peaceful", t: "Мирный" },
-      { v: "mafia", t: "Мафия" },
-      { v: "sheriff", t: "Шериф" },
-      { v: "don", t: "Дон" }
-    ].forEach(r => {
-      const opt = document.createElement("option");
-      opt.value = r.v;
-      opt.textContent = r.t;
-      if (p.role === r.v) opt.selected = true;
-      roleSel.appendChild(opt);
-    });
-    roleSel.onchange = e => {
-      p.role = e.target.value;
-      save(state);
-    };
-
-    const lifeBtn = document.createElement("button");
-    lifeBtn.textContent = p.alive ? "Жив" : "Мёртв";
-    lifeBtn.className = p.alive ? "alive" : "dead";
-    lifeBtn.onclick = () => {
+    // Кнопка "Убить/Оживить"
+    const btn = document.createElement("button");
+    btn.textContent = p.alive ? "Убить" : "Оживить";
+    btn.onclick = () => {
       p.alive = !p.alive;
-      save(state);
+      saveState(state);
+      renderControl();
     };
 
-    row.append(slot, playerSel, roleSel, lifeBtn);
-    box.appendChild(row);
+    // Выпадающий список ролей
+    const select = document.createElement("select");
+    for (const roleName in roles) {
+      const option = document.createElement("option");
+      option.value = roleName;
+      option.textContent = roleName;
+      if (p.role === roleName) option.selected = true;
+      select.appendChild(option);
+    }
+    select.onchange = (e) => {
+      p.role = e.target.value;
+      saveState(state);
+    };
+
+    // Собираем строку
+    row.appendChild(img);
+    row.appendChild(name);
+    row.appendChild(btn);
+    row.appendChild(select);
+
+    container.appendChild(row);
   });
 }
 
-function newGame() {
-  const state = load();
-  const shuffled = playersData.map((_, i) => i).sort(() => Math.random() - 0.5);
-
-  state.players.forEach((p, i) => {
-    p.playerIndex = shuffled[i];
-    p.role = "peaceful";
-    p.alive = true;
-  });
-
-  save(state);
-}
-
-render();
+/* === Запуск рендера === */
+document.addEventListener("DOMContentLoaded", () => {
+  renderControl();
+});
 </script>
 
 </body>
