@@ -13,7 +13,8 @@ const playersData = [
 ];
 
 // Файлы для ролей
-const roles = {
+const roles =  {
+  "мирный": "roles/peaceful.png",
   "дон": "roles/don.png",
   "шериф": "roles/sheriff.png",
   "мафия": "roles/mafia.png"
