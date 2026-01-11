@@ -4,106 +4,61 @@
 <meta charset="UTF-8">
 <title>Control Panel</title>
 <style>
-* { box-sizing:border-box; }
-body { margin:0; padding:8px; background:#0e0e0e; color:#fff; font-family:Arial,sans-serif; }
-h2 { margin:0 0 6px; font-size:15px; text-align:center; }
-.player { display:grid; grid-template-columns:32px 1.4fr 1fr 64px; gap:6px; align-items:center;
-         background:#1b1b1b; padding:5px; border-radius:8px; margin-bottom:4px; }
-.slot { text-align:center; font-size:12px; opacity:0.6; }
-select { width:100%; padding:4px; font-size:12px; border-radius:6px; border:none; background:#2a2a2a; color:#fff; }
-button { padding:5px; font-size:12px; font-weight:bold; border:none; border-radius:6px; cursor:pointer; }
-.alive { background:#2ecc71; color:#000; }
-.dead { background:#e74c3c; color:#fff; }
-.reset { margin-top:6px; width:100%; padding:8px; font-size:13px; border-radius:8px; background:#3498db; color:#fff; }
+*{box-sizing:border-box;}
+body{margin:0;padding:8px;background:#0e0e0e;color:#fff;font-family:Arial,sans-serif;}
+h2{margin:0 0 6px;font-size:15px;text-align:center;}
+.player{display:grid;grid-template-columns:32px 1.4fr 1fr 64px;gap:6px;align-items:center;background:#1b1b1b;padding:5px;border-radius:8px;margin-bottom:4px;}
+.slot{text-align:center;font-size:12px;opacity:0.6;}
+select{width:100%;padding:4px;font-size:12px;border-radius:6px;border:none;background:#2a2a2a;color:#fff;}
+button{padding:5px;font-size:12px;font-weight:bold;border:none;border-radius:6px;cursor:pointer;}
+.alive{background:#2ecc71;color:#000;}
+.dead{background:#e74c3c;color:#fff;}
+.reset{margin-top:6px;width:100%;padding:8px;font-size:13px;border-radius:8px;background:#3498db;color:#fff;}
 </style>
 </head>
 <body>
-
 <h2>Управление</h2>
 <div id="players"></div>
 <button class="reset" onclick="newGame()">Новая игра</button>
 
 <script src="players.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.28.0/dist/supabase.min.js"></script>
 <script>
+// Подключение Supabase
+const SUPABASE_URL = "https://yctiaoltfmgehjdojhpk.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_VKqWEzjk6vDmSyKMYz33ow_YoVtFnvW";
+const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const box = document.getElementById("players");
 
-// Загрузка state
-function load() {
-  let state = JSON.parse(localStorage.getItem("state"));
-  if(!state){
-    state = { players: playersData.map((p,i)=>({playerIndex:i, alive:true, role:"peaceful"})) };
-    localStorage.setItem("state", JSON.stringify(state));
-  }
-  return state;
+// Загрузка данных с Supabase
+async function load() {
+  const { data, error } = await supabase.from('players').select('*').order('id');
+  if(error) { console.error(error); return []; }
+  return data;
 }
 
-// Сохранение state
-function save(state) {
-  localStorage.setItem("state", JSON.stringify(state));
-  render();
+// Сохранение состояния игрока
+async function save(player) {
+  await supabase.from('players').update({
+    playerIndex: player.playerIndex,
+    alive: player.alive,
+    role: player.role
+  }).eq('id', player.id);
 }
 
 // Отрисовка панели
-function render() {
+async function render() {
+  const state = await load();
   box.innerHTML = "";
-  const state = load();
-  state.players.forEach((p,i)=>{
+
+  state.forEach((p, i) => {
     const row = document.createElement("div");
     row.className = "player";
 
     const slot = document.createElement("div");
-    slot.className="slot";
-    slot.textContent=i+1;
+    slot.className = "slot";
+    slot.textContent = i + 1;
 
     const playerSel = document.createElement("select");
-    playersData.forEach((pl,idx)=>{
-      const opt = document.createElement("option");
-      opt.value=idx;
-      opt.textContent=pl.name;
-      if(idx===p.playerIndex) opt.selected=true;
-      playerSel.appendChild(opt);
-    });
-    playerSel.onchange = e => { p.playerIndex = Number(e.target.value); save(state); };
-
-    const roleSel = document.createElement("select");
-    [
-      {v:"peaceful", t:"Мирный"},
-      {v:"mafia", t:"Мафия"},
-      {v:"sheriff", t:"Шериф"},
-      {v:"don", t:"Дон"}
-    ].forEach(r=>{
-      const opt=document.createElement("option");
-      opt.value=r.v;
-      opt.textContent=r.t;
-      if(p.role===r.v) opt.selected=true;
-      roleSel.appendChild(opt);
-    });
-    roleSel.onchange=e=>{ p.role=e.target.value; save(state); };
-
-    const lifeBtn=document.createElement("button");
-    lifeBtn.textContent = p.alive ? "Жив" : "Мёртв";
-    lifeBtn.className = p.alive ? "alive":"dead";
-    lifeBtn.onclick = ()=>{ p.alive = !p.alive; save(state); };
-
-    row.append(slot, playerSel, roleSel, lifeBtn);
-    box.appendChild(row);
-  });
-}
-
-// Новая игра
-function newGame(){
-  const state = load();
-  const shuffled = playersData.map((_,i)=>i).sort(()=>Math.random()-0.5);
-  state.players.forEach((p,i)=>{
-    p.playerIndex = shuffled[i];
-    p.role="peaceful";
-    p.alive=true;
-  });
-  save(state);
-}
-
-render();
-</script>
-
-</body>
-</html>
+    playersData.f
