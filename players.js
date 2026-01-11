@@ -1,3 +1,5 @@
+// players.js
+
 // Данные игроков
 const playersData = [
   { name: "Балтика", img: "photos/1.png" },
@@ -12,10 +14,10 @@ const playersData = [
   { name: "Пиксель", img: "photos/10.png" }
 ];
 
-// Файлы для ролей
-const roles =  {
-  "мирный": "roles/peaceful.png",
-  "дон": "roles/don.png",
-  "шериф": "roles/sheriff.png",
-  "мафия": "roles/mafia.png"
+// Роли (ключи — английские!)
+const rolesData = {
+  "peaceful": "roles/peaceful.png",
+  "mafia": "roles/mafia.png",
+  "sheriff": "roles/sheriff.png",
+  "don": "roles/don.png"
 };
