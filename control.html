@@ -2,139 +2,168 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>OBS Control</title>
-<link href="https://fonts.googleapis.com/css2?family=Raleway:900&display=swap" rel="stylesheet">
+<title>Control Panel</title>
+
 <style>
+* { box-sizing: border-box; }
 body {
-  font-family: 'Raleway', sans-serif;
-  background: #222;
+  margin: 0;
+  padding: 8px;
+  background: #0e0e0e;
   color: #fff;
-  padding: 10px;
+  font-family: Arial, sans-serif;
 }
-h2 {
-  margin-top: 0;
-}
-.player-row {
-  display: flex;
+h2 { margin: 0 0 6px; font-size: 15px; text-align: center; }
+.player {
+  display: grid;
+  grid-template-columns: 32px 1.4fr 1fr 64px;
+  gap: 6px;
   align-items: center;
-  margin-bottom: 8px;
+  background: #1b1b1b;
+  padding: 5px;
+  border-radius: 8px;
+  margin-bottom: 4px;
 }
-.player-row img {
-  width: 40px;
-  height: 40px;
+.slot { text-align: center; font-size: 12px; opacity: 0.6; }
+select {
+  width: 100%;
+  padding: 4px;
+  font-size: 12px;
   border-radius: 6px;
-  margin-right: 6px;
-}
-.player-row select, .player-row button {
-  margin-right: 6px;
-  cursor: pointer;
+  border: none;
+  background: #2a2a2a;
+  color: #fff;
 }
 button {
-  background: #444;
-  color: #fff;
+  padding: 5px;
+  font-size: 12px;
+  font-weight: bold;
   border: none;
-  padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 6px;
+  cursor: pointer;
 }
-button:hover {
-  background: #666;
-}
-select {
-  background: #333;
+.alive { background: #2ecc71; color: #000; }
+.dead { background: #e74c3c; color: #fff; }
+.reset {
+  margin-top: 6px;
+  width: 100%;
+  padding: 8px;
+  font-size: 13px;
+  border-radius: 8px;
+  background: #3498db;
   color: #fff;
-  border: none;
-  padding: 4px;
-  border-radius: 4px;
 }
 </style>
 </head>
+
 <body>
 
-<h2>Управление игроками</h2>
+<h2>Управление</h2>
+<div id="players"></div>
+<button class="reset" onclick="newGame()">Новая игра</button>
 
-<!-- Контейнер для строк игроков -->
-<div id="players-container"></div>
-
-<!-- Подключаем players.js -->
 <script src="players.js"></script>
 
 <script>
-/* === Инициализация state === */
-function loadState() {
+const box = document.getElementById("players");
+
+// === Инициализация state (если нет, создаём дефолт) ===
+function load() {
   let state = JSON.parse(localStorage.getItem("state"));
   if (!state) {
-    // дефолт: все игроки alive и мирные
-    state = { players: playersData.map((p, i) => ({
-      playerIndex: i,
-      alive: true,
-      role: "мирный"
-    }))};
+    state = {
+      players: playersData.map((p, i) => ({
+        playerIndex: i,
+        role: "peaceful",
+        alive: true
+      }))
+    };
     localStorage.setItem("state", JSON.stringify(state));
   }
   return state;
 }
 
-function saveState(state) {
+function save(state) {
   localStorage.setItem("state", JSON.stringify(state));
+  render();
 }
 
-/* === Рендер панели управления === */
-function renderControl() {
-  const container = document.getElementById("players-container");
-  const state = loadState();
-  container.innerHTML = "";
+// === Рендер панели ===
+function render() {
+  box.innerHTML = "";
+  const state = load();
 
   state.players.forEach((p, i) => {
-    const data = playersData[p.playerIndex];
-
     const row = document.createElement("div");
-    row.className = "player-row";
+    row.className = "player";
 
-    // Фото игрока
-    const img = document.createElement("img");
-    img.src = data.img;
+    // слот
+    const slot = document.createElement("div");
+    slot.className = "slot";
+    slot.textContent = i + 1;
 
-    // Имя
-    const name = document.createElement("span");
-    name.textContent = data.name;
-
-    // Кнопка "Убить/Оживить"
-    const btn = document.createElement("button");
-    btn.textContent = p.alive ? "Убить" : "Оживить";
-    btn.onclick = () => {
-      p.alive = !p.alive;
-      saveState(state);
-      renderControl();
+    // выбор игрока
+    const playerSel = document.createElement("select");
+    playersData.forEach((pl, idx) => {
+      const opt = document.createElement("option");
+      opt.value = idx;
+      opt.textContent = pl.name;
+      if (idx === p.playerIndex) opt.selected = true;
+      playerSel.appendChild(opt);
+    });
+    playerSel.onchange = e => {
+      p.playerIndex = Number(e.target.value);
+      save(state);
     };
 
-    // Выпадающий список ролей
-    const select = document.createElement("select");
-    for (const roleName in roles) {
-      const option = document.createElement("option");
-      option.value = roleName;
-      option.textContent = roleName;
-      if (p.role === roleName) option.selected = true;
-      select.appendChild(option);
-    }
-    select.onchange = (e) => {
+    // выбор роли
+    const roleSel = document.createElement("select");
+    [
+      { v: "peaceful", t: "Мирный" },
+      { v: "mafia", t: "Мафия" },
+      { v: "sheriff", t: "Шериф" },
+      { v: "don", t: "Дон" }
+    ].forEach(r => {
+      const opt = document.createElement("option");
+      opt.value = r.v;
+      opt.textContent = r.t;
+      if (p.role === r.v) opt.selected = true;
+      roleSel.appendChild(opt);
+    });
+    roleSel.onchange = e => {
       p.role = e.target.value;
-      saveState(state);
+      save(state);
     };
 
-    // Собираем строку
-    row.appendChild(img);
-    row.appendChild(name);
-    row.appendChild(btn);
-    row.appendChild(select);
+    // кнопка alive/dead
+    const lifeBtn = document.createElement("button");
+    lifeBtn.textContent = p.alive ? "Жив" : "Мёртв";
+    lifeBtn.className = p.alive ? "alive" : "dead";
+    lifeBtn.onclick = () => {
+      p.alive = !p.alive;
+      save(state);
+    };
 
-    container.appendChild(row);
+    row.append(slot, playerSel, roleSel, lifeBtn);
+    box.appendChild(row);
   });
 }
 
-/* === Запуск рендера === */
-document.addEventListener("DOMContentLoaded", () => {
-  renderControl();
-});
+// === Новая игра ===
+function newGame() {
+  const state = load();
+  const shuffled = playersData.map((_, i) => i).sort(() => Math.random() - 0.5);
+
+  state.players.forEach((p, i) => {
+    p.playerIndex = shuffled[i];
+    p.role = "peaceful";
+    p.alive = true;
+  });
+
+  save(state);
+}
+
+render();
 </script>
 
 </body>
