@@ -34,7 +34,7 @@ const box = document.getElementById("players");
 // Загрузка данных с Supabase
 async function load() {
   const { data, error } = await supabase.from('players').select('*').order('id');
-  if(error) { console.error(error); return []; }
+  if(error){ console.error(error); return []; }
   return data;
 }
 
@@ -49,10 +49,23 @@ async function save(player) {
 
 // Отрисовка панели
 async function render() {
-  const state = await load();
+  let state = await load();
+
+  // Если таблица пуста — создаём 10 игроков
+  if(state.length === 0){
+    for(let i=0;i<playersData.length;i++){
+      await supabase.from('players').insert({
+        playerIndex: i,
+        alive: true,
+        role: "peaceful"
+      });
+    }
+    state = await load();
+  }
+
   box.innerHTML = "";
 
-  state.forEach((p, i) => {
+  state.forEach((p,i)=>{
     const row = document.createElement("div");
     row.className = "player";
 
@@ -61,4 +74,65 @@ async function render() {
     slot.textContent = i + 1;
 
     const playerSel = document.createElement("select");
-    playersData.f
+    playersData.forEach((pl, idx)=>{
+      const opt = document.createElement("option");
+      opt.value = idx;
+      opt.textContent = pl.name;
+      if(idx===p.playerIndex) opt.selected = true;
+      playerSel.appendChild(opt);
+    });
+    playerSel.onchange = async e=>{
+      p.playerIndex = Number(e.target.value);
+      await save(p);
+    };
+
+    const roleSel = document.createElement("select");
+    [
+      {v:"peaceful", t:"Мирный"},
+      {v:"mafia", t:"Мафия"},
+      {v:"sheriff", t:"Шериф"},
+      {v:"don", t:"Дон"}
+    ].forEach(r=>{
+      const opt = document.createElement("option");
+      opt.value = r.v;
+      opt.textContent = r.t;
+      if(p.role===r.v) opt.selected=true;
+      roleSel.appendChild(opt);
+    });
+    roleSel.onchange=async e=>{
+      p.role = e.target.value;
+      await save(p);
+    };
+
+    const lifeBtn = document.createElement("button");
+    lifeBtn.textContent = p.alive?"Жив":"Мёртв";
+    lifeBtn.className = p.alive?"alive":"dead";
+    lifeBtn.onclick = async ()=>{
+      p.alive = !p.alive;
+      await save(p);
+    };
+
+    row.append(slot, playerSel, roleSel, lifeBtn);
+    box.appendChild(row);
+  });
+}
+
+// Создать новую игру
+async function newGame() {
+  for(let i=0;i<playersData.length;i++){
+    await supabase.from('players').update({
+      playerIndex: i,
+      alive: true,
+      role: "peaceful"
+    }).eq('id', i+1);
+  }
+}
+
+// Авто-обновление каждые 0.5 сек
+setInterval(render, 500);
+
+// Первоначальная отрисовка
+render();
+</script>
+</body>
+</html>
