@@ -103,10 +103,9 @@ html, body {
 <script src="players.js"></script>
 <script>
 const overlay = document.getElementById("overlay");
-const CACHE_VERSION = Date.now();
 let prevAlive = [];
 
-// Роли для overlay
+// Роли для overlay (только отображаем нужные)
 const roles = {
   "mafia": "roles/mafia.png",
   "sheriff": "roles/sheriff.png",
@@ -114,7 +113,7 @@ const roles = {
   // "peaceful" не отображаем
 };
 
-// Загружаем state, если нет — создаём дефолт
+// Загрузка state из localStorage
 function loadState() {
   let state = JSON.parse(localStorage.getItem("state"));
   if (!state) {
@@ -128,6 +127,7 @@ function loadState() {
   return state;
 }
 
+// Отрисовка overlay
 function render() {
   const state = loadState();
   if (!state) return;
@@ -144,21 +144,22 @@ function render() {
     const photoWrap = document.createElement("div");
     photoWrap.className = "photo-wrap";
 
+    // Фото игрока
     const img = document.createElement("img");
     img.className = "photo";
-    img.src = data.img + "?v=" + CACHE_VERSION;
+    img.src = data.img;
     photoWrap.appendChild(img);
 
     // Призрак при смерти
     if (prevAlive[i] === true && p.alive === false) {
       const ghost = document.createElement("img");
       ghost.className = "ghost";
-      ghost.src = data.img + "?v=" + CACHE_VERSION;
+      ghost.src = data.img;
       photoWrap.appendChild(ghost);
       setTimeout(() => ghost.remove(), 2600);
     }
 
-    // Роль (только если не peaceful)
+    // Роль (кроме peaceful)
     if (p.role && p.role !== "peaceful" && roles[p.role]) {
       const roleImg = document.createElement("img");
       roleImg.className = "role";
