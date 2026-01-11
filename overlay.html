@@ -11,6 +11,7 @@ html, body {
   background: transparent;
   overflow: hidden;
 }
+
 .overlay {
   position: absolute;
   bottom: 0;
@@ -21,6 +22,7 @@ html, body {
   align-items: center;
   background: rgba(0,0,0,0.82);
 }
+
 .player {
   width: 192px;
   display: flex;
@@ -29,11 +31,13 @@ html, body {
   position: relative;
   color: #fff;
 }
+
 .photo-wrap {
   position: relative;
   width: 110px;
   height: 110px;
 }
+
 .photo {
   width: 110px;
   height: 110px;
@@ -41,9 +45,11 @@ html, body {
   border-radius: 12px;
   transition: filter 0.4s ease;
 }
+
 .dead .photo {
   filter: grayscale(100%) brightness(0.35);
 }
+
 .role {
   position: absolute;
   top: 6px;
@@ -52,6 +58,7 @@ html, body {
   height: 26px;
   pointer-events: none;
 }
+
 .name {
   margin-top: 6px;
   font-family: 'Raleway', sans-serif;
@@ -64,6 +71,7 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 /* Душа-призрак */
 .ghost {
   position: absolute;
@@ -79,6 +87,7 @@ html, body {
   mix-blend-mode: screen;
   animation: soulFly 2.6s ease-out forwards;
 }
+
 @keyframes soulFly {
   0% { transform: translate(0,0) scale(1) rotate(0deg); opacity:0.55; filter: blur(4px); }
   30% { transform: translate(-12px,-60px) scale(1.15) rotate(-6deg); opacity:0.45; }
@@ -88,6 +97,7 @@ html, body {
 </style>
 </head>
 <body>
+
 <div class="overlay" id="overlay"></div>
 
 <script src="players.js"></script>
@@ -96,12 +106,17 @@ const overlay = document.getElementById("overlay");
 const CACHE_VERSION = Date.now();
 let prevAlive = [];
 
-// Функция получения state
+// Загружаем state, если его нет — создаём дефолтное
 function loadState() {
   let state = JSON.parse(localStorage.getItem("state"));
   if (!state) {
-    // Инициализация по умолчанию
-    state = { players: playersData.map((p, i) => ({ playerIndex: i, alive: true, role: "мирный" })) };
+    state = {
+      players: playersData.map((p, i) => ({
+        playerIndex: i,
+        alive: true,
+        role: "мирный"
+      }))
+    };
     localStorage.setItem("state", JSON.stringify(state));
   }
   return state;
@@ -128,7 +143,7 @@ function render() {
     img.src = data.img + "?v=" + CACHE_VERSION;
     photoWrap.appendChild(img);
 
-    // Призрак, если игрок только что умер
+    // Призрак при смерти
     if (prevAlive[i] === true && p.alive === false) {
       const ghost = document.createElement("img");
       ghost.className = "ghost";
@@ -137,11 +152,12 @@ function render() {
       setTimeout(() => ghost.remove(), 2600);
     }
 
+    // Роль
     if (p.role && p.role !== "мирный") {
-      const role = document.createElement("img");
-      role.className = "role";
-      role.src = roles[p.role];
-      photoWrap.appendChild(role);
+      const roleImg = document.createElement("img");
+      roleImg.className = "role";
+      roleImg.src = roles[p.role];
+      photoWrap.appendChild(roleImg);
     }
 
     const name = document.createElement("div");
@@ -158,5 +174,6 @@ function render() {
 setInterval(render, 400);
 render();
 </script>
+
 </body>
 </html>
