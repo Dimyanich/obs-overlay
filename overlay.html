@@ -3,23 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <title>OBS Overlay</title>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:900&display=swap" rel="stylesheet">
 <style>
-html, body { margin:0; padding:0; background:transparent; overflow:hidden; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
 .overlay {
-  position:absolute;
-  bottom:0; width:1920px; height:150px;
-  display:flex; justify-content:center; align-items:center;
+  position: absolute;
+  bottom: 0;
+  width: 1920px;
+  height: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background: rgba(0,0,0,0.82);
 }
+
 .player {
-  width:192px; display:flex; flex-direction:column; align-items:center; position:relative;
-  color:#fff;
+  width: 192px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  color: #fff;
 }
-.photo-wrap { position:relative; width:110px; height:110px; }
-.photo { width:110px; height:110px; object-fit:cover; border-radius:12px; }
-.dead .photo { filter: grayscale(100%) brightness(0.35); }
-.role { position:absolute; top:6px; right:6px; width:26px; height:26px; }
-.name { margin-top:6px; font-family:Arial,sans-serif; font-weight:bold; font-size:14px; text-align:center; }
+
+.photo-wrap {
+  position: relative;
+  width: 110px;
+  height: 110px;
+}
+
+.photo {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 12px;
+  transition: filter 0.4s ease;
+}
+
+.dead .photo {
+  filter: grayscale(100%) brightness(0.35);
+}
+
+.role {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  pointer-events: none;
+}
+
+.name {
+  margin-top: 6px;
+  font-family: 'Raleway', sans-serif;
+  font-weight: 900;
+  font-size: 16px;
+  text-align: center;
+  text-shadow: 0 2px 4px #000;
+  max-width: 170px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Душа-призрак */
+.ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: grayscale(100%) brightness(2.6) blur(6px);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  animation: soulFly 2.6s ease-out forwards;
+}
+
+@keyframes soulFly {
+  0% { transform: translate(0,0) scale(1) rotate(0deg); opacity:0; filter: blur(4px);}
+  10% { opacity:0.5; }
+  40% { transform: translate(-12px,-60px) scale(1.15) rotate(-6deg); opacity:0.45;}
+  60% { transform: translate(14px,-120px) scale(1.35) rotate(8deg); opacity:0.3;}
+  100% { transform: translate(-6px,-210px) scale(1.55) rotate(14deg); opacity:0; filter:blur(14px);}
+}
 </style>
 </head>
 <body>
@@ -31,13 +106,16 @@ html, body { margin:0; padding:0; background:transparent; overflow:hidden; }
 const overlay = document.getElementById("overlay");
 let prevAlive = [];
 
+// Отображаемые роли
 const roles = {
-  "mafia":"roles/mafia.png",
-  "sheriff":"roles/sheriff.png",
-  "don":"roles/don.png"
+  "mafia": "roles/mafia.png",
+  "sheriff": "roles/sheriff.png",
+  "don": "roles/don.png"
+  // peaceful не показываем
 };
 
-function loadState(){
+// Загрузка состояния из localStorage
+function loadState() {
   let state = JSON.parse(localStorage.getItem("state"));
   if(!state){
     state = { players: playersData.map((p,i)=>({playerIndex:i, alive:true, role:"peaceful"})) };
@@ -46,43 +124,53 @@ function loadState(){
   return state;
 }
 
-function render(){
+// Отрисовка overlay
+function render() {
   const state = loadState();
-  overlay.innerHTML="";
+  overlay.innerHTML = "";
 
   state.players.forEach((p,i)=>{
-    if(typeof p.playerIndex!=="number" || !playersData[p.playerIndex]) return;
+    if(typeof p.playerIndex !== "number" || !playersData[p.playerIndex]) return;
     const data = playersData[p.playerIndex];
 
     const player = document.createElement("div");
     player.className = "player" + (p.alive?"":" dead");
 
     const photoWrap = document.createElement("div");
-    photoWrap.className="photo-wrap";
+    photoWrap.className = "photo-wrap";
 
-    // фото
+    // Фото игрока
     const img = document.createElement("img");
-    img.className="photo";
-    img.src=data.img;
+    img.className = "photo";
+    img.src = data.img;
     photoWrap.appendChild(img);
 
-    // роль
-    if(p.role && p.role!=="peaceful" && roles[p.role]){
-      const roleImg=document.createElement("img");
-      roleImg.className="role";
-      roleImg.src=roles[p.role];
+    // Призрак при смерти
+    if(prevAlive[i] === true && p.alive === false){
+      const ghost = document.createElement("img");
+      ghost.className = "ghost";
+      ghost.src = data.img;
+      photoWrap.appendChild(ghost);
+      setTimeout(()=>ghost.remove(),2600);
+    }
+
+    // Роль (кроме peaceful)
+    if(p.role && p.role !== "peaceful" && roles[p.role]){
+      const roleImg = document.createElement("img");
+      roleImg.className = "role";
+      roleImg.src = roles[p.role];
       photoWrap.appendChild(roleImg);
     }
 
-    // имя
-    const name=document.createElement("div");
-    name.className="name";
-    name.textContent=data.name;
+    // Имя игрока
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = data.name;
 
-    player.append(photoWrap,name);
+    player.append(photoWrap, name);
     overlay.appendChild(player);
 
-    prevAlive[i]=p.alive;
+    prevAlive[i] = p.alive;
   });
 }
 
