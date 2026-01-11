@@ -5,103 +5,34 @@
 <title>OBS Overlay</title>
 <link href="https://fonts.googleapis.com/css2?family=Raleway:900&display=swap" rel="stylesheet">
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  background: transparent;
-  overflow: hidden;
-}
-
+html, body { margin:0; padding:0; background:transparent; overflow:hidden; }
 .overlay {
-  position: absolute;
-  bottom: 0;
-  width: 1920px;
-  height: 150px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position:absolute; bottom:0; width:1920px; height:150px;
+  display:flex; justify-content:center; align-items:center;
   background: rgba(0,0,0,0.82);
 }
-
 .player {
-  width: 192px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  color: #fff;
+  width:192px; display:flex; flex-direction:column; align-items:center; position:relative;
+  color:#fff;
 }
-
-.photo-wrap {
-  position: relative;
-  width: 110px;
-  height: 110px;
+.photo-wrap { position:relative; width:110px; height:110px; }
+.photo { width:110px; height:110px; object-fit:cover; border-radius:12px; transition:filter 0.4s ease; }
+.dead .photo { filter: grayscale(100%) brightness(0.35); }
+.role { position:absolute; top:6px; right:6px; width:26px; height:26px; pointer-events:none; }
+.name { margin-top:6px; font-family:'Raleway',sans-serif; font-weight:900; font-size:16px;
+  text-align:center; text-shadow:0 2px 4px #000; max-width:170px; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
 }
-
-.photo {
-  width: 110px;
-  height: 110px;
-  object-fit: cover;
-  border-radius: 12px;
-  transition: filter 0.4s ease;
+.ghost { position:absolute; top:0; left:0; width:110px; height:110px; object-fit:cover;
+  border-radius:50%; pointer-events:none; filter:grayscale(100%) brightness(2.6) blur(6px);
+  opacity:0.55; mix-blend-mode:screen; animation:soulFly 2.6s ease-out forwards;
 }
-
-.dead .photo {
-  filter: grayscale(100%) brightness(0.35);
-}
-
-.role {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 26px;
-  height: 26px;
-  pointer-events: none;
-  opacity: 0;
-  transform: scale(0.8);
-  animation: fadeInRole 0.5s forwards;
-}
-
-.name {
-  margin-top: 6px;
-  font-family: 'Raleway', sans-serif;
-  font-weight: 900;
-  font-size: 16px;
-  text-align: center;
-  text-shadow: 0 2px 4px #000;
-  max-width: 170px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Душа-призрак */
-.ghost {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 110px;
-  height: 110px;
-  object-fit: cover;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: grayscale(100%) brightness(2.6) blur(6px);
-  opacity: 0.55;
-  mix-blend-mode: screen;
-  animation: soulFly 2.6s ease-out forwards;
-}
-
-/* Анимации */
 @keyframes soulFly {
-  0% { transform: translate(0,0) scale(1) rotate(0deg); opacity:0; filter: blur(4px); }
+  0% { transform:translate(0,0) scale(1) rotate(0deg); opacity:0; filter: blur(4px);}
   10% { opacity:0.5; }
-  40% { transform: translate(-12px,-60px) scale(1.15) rotate(-6deg); opacity:0.45; }
-  60% { transform: translate(14px,-120px) scale(1.35) rotate(8deg); opacity:0.3; }
-  100% { transform: translate(-6px,-210px) scale(1.55) rotate(14deg); opacity:0; filter: blur(14px); }
-}
-
-@keyframes fadeInRole {
-  to { opacity: 1; transform: scale(1); }
+  40% { transform:translate(-12px,-60px) scale(1.15) rotate(-6deg); opacity:0.45;}
+  60% { transform:translate(14px,-120px) scale(1.35) rotate(8deg); opacity:0.3;}
+  100% { transform:translate(-6px,-210px) scale(1.55) rotate(14deg); opacity:0; filter:blur(14px);}
 }
 </style>
 </head>
@@ -114,79 +45,67 @@ html, body {
 const overlay = document.getElementById("overlay");
 let prevAlive = [];
 
-// Роли для overlay (отображаем только mafia, sheriff, don)
-const roles = {
-  "mafia": "roles/mafia.png",
-  "sheriff": "roles/sheriff.png",
-  "don": "roles/don.png"
-};
+const roles = { "mafia":"roles/mafia.png", "sheriff":"roles/sheriff.png", "don":"roles/don.png" };
 
-// Загрузка state из localStorage
-function loadState() {
+// Загрузка state с проверкой
+function loadState(){
   let state = JSON.parse(localStorage.getItem("state"));
-  if (!state) {
-    state = { players: playersData.map((p, i) => ({
-      playerIndex: i,
-      alive: true,
-      role: "peaceful"
-    }))};
+  if(!state){
+    state = { players: playersData.map((p,i)=>({playerIndex:i, alive:true, role:"peaceful"})) };
     localStorage.setItem("state", JSON.stringify(state));
   }
   return state;
 }
 
-// Отрисовка overlay
-function render() {
+function render(){
   const state = loadState();
-  if (!state) return;
+  if(!state || !state.players) return;
+  overlay.innerHTML="";
 
-  overlay.innerHTML = "";
-
-  state.players.forEach((p, i) => {
+  state.players.forEach((p,i)=>{
+    if(typeof p.playerIndex !== "number" || !playersData[p.playerIndex]) return;
     const data = playersData[p.playerIndex];
-    if (!data) return;
 
     const player = document.createElement("div");
-    player.className = "player" + (p.alive ? "" : " dead");
+    player.className = "player" + (p.alive?"":" dead");
 
     const photoWrap = document.createElement("div");
-    photoWrap.className = "photo-wrap";
+    photoWrap.className="photo-wrap";
 
-    // Фото игрока
     const img = document.createElement("img");
-    img.className = "photo";
-    img.src = data.img;
+    img.className="photo";
+    img.src=data.img;
     photoWrap.appendChild(img);
 
-    // Призрак при смерти
-    if (prevAlive[i] === true && p.alive === false) {
+    // Призрак
+    if(prevAlive[i]===true && p.alive===false){
       const ghost = document.createElement("img");
-      ghost.className = "ghost";
-      ghost.src = data.img;
+      ghost.className="ghost";
+      ghost.src=data.img;
       photoWrap.appendChild(ghost);
-      setTimeout(() => ghost.remove(), 2600);
+      setTimeout(()=>ghost.remove(),2600);
     }
 
-    // Роль (кроме peaceful)
-    if (p.role && p.role !== "peaceful" && roles[p.role]) {
-      const roleImg = document.createElement("img");
-      roleImg.className = "role";
-      roleImg.src = roles[p.role];
+    // Роль
+    if(p.role && p.role!=="peaceful" && roles[p.role]){
+      const roleImg=document.createElement("img");
+      roleImg.className="role";
+      roleImg.src=roles[p.role];
       photoWrap.appendChild(roleImg);
     }
 
     const name = document.createElement("div");
-    name.className = "name";
-    name.textContent = data.name;
+    name.className="name";
+    name.textContent=data.name;
 
     player.append(photoWrap, name);
     overlay.appendChild(player);
 
-    prevAlive[i] = p.alive;
+    prevAlive[i]=p.alive;
   });
 }
 
-setInterval(render, 400);
+setInterval(render,400);
 render();
 </script>
 
