@@ -24,8 +24,8 @@ html,body{margin:0;padding:0;background:transparent;overflow:hidden;}
 <script src="players.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.28.0/dist/supabase.min.js"></script>
 <script>
-const overlay=document.getElementById("overlay");
-let prevAlive=[];
+const overlay = document.getElementById("overlay");
+let prevAlive = [];
 
 // Подключение Supabase
 const SUPABASE_URL = "https://yctiaoltfmgehjdojhpk.supabase.co";
@@ -39,62 +39,65 @@ const roles = {
 };
 
 // Отрисовка overlay
-async function render(state){
-  overlay.innerHTML="";
+function renderOverlay(state){
+  overlay.innerHTML = "";
   state.forEach((p,i)=>{
-    if(typeof p.playerIndex!=="number"||!playersData[p.playerIndex]) return;
+    if(typeof p.playerIndex!=="number" || !playersData[p.playerIndex]) return;
     const data = playersData[p.playerIndex];
 
-    const player=document.createElement("div");
-    player.className="player"+(p.alive?"":" dead");
+    const player = document.createElement("div");
+    player.className = "player" + (p.alive?"":" dead");
 
-    const photoWrap=document.createElement("div");
-    photoWrap.className="photo-wrap";
+    const photoWrap = document.createElement("div");
+    photoWrap.className = "photo-wrap";
 
-    const img=document.createElement("img");
-    img.className="photo";
-    img.src=data.img;
+    const img = document.createElement("img");
+    img.className = "photo";
+    img.src = data.img;
     photoWrap.appendChild(img);
 
     if(prevAlive[i]===true && p.alive===false){
-      const ghost=document.createElement("img");
-      ghost.className="ghost";
-      ghost.src=data.img;
+      const ghost = document.createElement("img");
+      ghost.className = "ghost";
+      ghost.src = data.img;
       photoWrap.appendChild(ghost);
       setTimeout(()=>ghost.remove(),2600);
     }
 
     if(p.role && p.role!=="peaceful" && roles[p.role]){
-      const roleImg=document.createElement("img");
-      roleImg.className="role";
-      roleImg.src=roles[p.role];
+      const roleImg = document.createElement("img");
+      roleImg.className = "role";
+      roleImg.src = roles[p.role];
       photoWrap.appendChild(roleImg);
     }
 
-    const name=document.createElement("div");
-    name.className="name";
-    name.textContent=data.name;
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = data.name;
 
     player.append(photoWrap,name);
     overlay.appendChild(player);
-    prevAlive[i]=p.alive;
+
+    prevAlive[i] = p.alive;
   });
 }
 
 // Загрузка игроков из Supabase
-async function load() {
+async function loadPlayers() {
   const { data, error } = await supabase.from('players').select('*').order('id');
   if(error){ console.error(error); return []; }
   return data;
 }
 
-// Подписка на Realtime
-supabase.from('players').on('UPDATE', payload=>{
-  load().then(data => render(data));
-}).subscribe();
+// Функция обновления overlay каждые 0.5 сек
+async function updateOverlay() {
+  const state = await loadPlayers();
+  renderOverlay(state);
+}
 
-// Начальная отрисовка
-load().then(data => render(data));
+// Запуск авто-обновления
+setInterval(updateOverlay, 500);
+updateOverlay();
 </script>
 
 </body>
