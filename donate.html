@@ -6,7 +6,7 @@
 <style>
 @font-face {
   font-family: 'BatmanForever';
-  src: url('BatmanForeverAlternateCyr.ttf') format('truetype');
+  src: url('https://raw.githubusercontent.com/username/repo/main/BatmanForeverAlternateCyr.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -30,24 +30,25 @@ body {
   border-radius: 60px;
   text-decoration: none;
 
-  /* Неоновый glow */
+  /* Двойной неон: внутренний и внешний glow */
   box-shadow:
-    0 0 8px #ff0000,
+    0 0 6px #ff0000,
     0 0 12px #ff0000,
     0 0 18px #ff0000,
-    0 0 24px #ff0000;
+    0 0 28px #ff0000,
+    0 0 40px #ff5555;
 
-  /* Для плавности glow на текст */
   text-shadow:
     0 0 4px #ff0000,
     0 0 8px #ff0000,
-    0 0 12px #ff0000;
-
+    0 0 12px #ff5555,
+    0 0 16px #ff5555;
+  
   transition: transform 0.2s;
 }
 
 .btn:hover {
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 </style>
 </head>
