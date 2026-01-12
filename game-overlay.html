@@ -16,58 +16,103 @@ html, body {
   position: absolute;
   top: 20px;
   right: 20px;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 14px 22px;
-  border-radius: 14px;
+  background: rgba(0,0,0,0.7);
+  padding: 16px 24px;
+  border-radius: 16px;
   font-family: Arial, sans-serif;
-  font-size: 28px;
-  font-weight: bold;
-  color: #ffffff;
+  color: #fff;
   text-shadow: 0 2px 6px #000;
+}
+
+#line1 {
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+#line2 {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Анимация появления числа */
+.lh-number {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.8);
+  animation: fadeInUp 0.5s forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 </style>
 </head>
 
 <body>
 
-<div id="panel">Игра 1</div>
+<div id="panel">
+  <div id="line1">Игра 1</div>
+  <div id="line2">Л.Х. —</div>
+</div>
 
-<!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-/* === НАСТРОЙКИ SUPABASE === */
 const SUPABASE_URL = "https://yctiaoltfmgehjdojhpk.supabase.co";
 const SUPABASE_KEY = "sb_publishable_VKqWEzjk6vDmSyKMYz33ow_YoVtFnvW";
 
-/* === ПРАВИЛЬНОЕ СОЗДАНИЕ КЛИЕНТА === */
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const panel = document.getElementById("panel");
+const line1 = document.getElementById("line1");
+const line2 = document.getElementById("line2");
 
-/* === ЗАГРУЗКА НОМЕРА ИГРЫ === */
-async function loadGame() {
-  const { data, error } = await db
+let previousLH = [];
+
+/* Обновление оверлея */
+async function update() {
+  const { data } = await db
     .from("game_state")
-    .select("game_number")
+    .select("*")
     .eq("id", 1)
     .single();
 
-  if (error) {
-    console.error("Supabase error:", error);
-    return;
-  }
+  if (!data) return;
 
-  if (data && typeof data.game_number === "number") {
-    panel.textContent = "Игра " + data.game_number;
+  // Обновляем номер игры
+  line1.textContent = "Игра " + data.game_number;
+
+  // Обновляем Л.Х.
+  const nums = [data.lh_1, data.lh_2, data.lh_3].filter(n => n !== null);
+
+  // Если Л.Х. не изменилось — не делаем анимацию
+  if (nums.join() === previousLH.join()) return;
+
+  previousLH = nums;
+
+  line2.innerHTML = ""; // очистка
+
+  if (nums.length === 0) {
+    line2.textContent = "Л.Х. —";
+  } else {
+    nums.forEach(n => {
+      const span = document.createElement("span");
+      span.textContent = n;
+      span.className = "lh-number";
+      line2.appendChild(span);
+    });
   }
 }
 
-/* === ОБНОВЛЕНИЕ КАЖДЫЕ 500 МС === */
-setInterval(loadGame, 500);
-
-/* === ПЕРВЫЙ ЗАПУСК === */
-loadGame();
+/* Проверка каждые 0.5 секунды */
+setInterval(update, 500);
+update();
 </script>
 
 </body>
