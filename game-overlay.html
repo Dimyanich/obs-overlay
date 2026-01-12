@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Game Overlay</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+#panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0,0,0,0.8);
+  padding: 14px 22px;
+  border-radius: 14px;
+  font-family: Arial, sans-serif;
+  font-size: 28px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 2px 6px #000;
+}
+</style>
+</head>
+<body>
+
+<div id="panel">Игра 1</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.28.0/dist/supabase.min.js"></script>
+<script>
+const SUPABASE_URL = "https://yctiaoltfmgehjdojhpk.supabase.co";
+const SUPABASE_KEY = "sb_publishable_VKqWEzjk6vDmSyKMYz33ow_YoVtFnvW";
+const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const panel = document.getElementById("panel");
+
+async function update() {
+  const { data } = await supabase
+    .from("game_state")
+    .select("game_number")
+    .eq("id", 1)
+    .single();
+
+  if (data) {
+    panel.textContent = "Игра " + data.game_number;
+  }
+}
+
+// обновляем раз в 0.5 сек
+setInterval(update, 500);
+update();
+</script>
+
+</body>
+</html>

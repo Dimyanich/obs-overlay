@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Game Control</title>
+<style>
+body {
+  margin: 0;
+  padding: 12px;
+  background: #0e0e0e;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+select {
+  width: 100%;
+  padding: 12px;
+  font-size: 18px;
+  border-radius: 8px;
+  border: none;
+  background: #2a2a2a;
+  color: #fff;
+}
+</style>
+</head>
+<body>
+
+<h2>Номер игры</h2>
+<select id="gameSelect"></select>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.28.0/dist/supabase.min.js"></script>
+<script>
+const SUPABASE_URL = "https://yctiaoltfmgehjdojhpk.supabase.co";
+const SUPABASE_KEY = "sb_publishable_VKqWEzjk6vDmSyKMYz33ow_YoVtFnvW";
+const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const select = document.getElementById("gameSelect");
+
+// наполняем список 1–12
+for (let i = 1; i <= 12; i++) {
+  const opt = document.createElement("option");
+  opt.value = i;
+  opt.textContent = "Игра " + i;
+  select.appendChild(opt);
+}
+
+// загрузка текущего значения
+async function load() {
+  const { data } = await supabase
+    .from("game_state")
+    .select("game_number")
+    .eq("id", 1)
+    .single();
+
+  if (data) select.value = data.game_number;
+}
+
+// сохранение
+select.onchange = async () => {
+  await supabase
+    .from("game_state")
+    .update({ game_number: Number(select.value) })
+    .eq("id", 1);
+};
+
+load();
+</script>
+
+</body>
+</html>
