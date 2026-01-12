@@ -2,71 +2,65 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Game Control</title>
+<title>Game Overlay</title>
 
 <style>
-body {
+html, body {
   margin: 0;
-  padding: 12px;
-  background: #0e0e0e;
-  color: #fff;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+#panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0,0,0,0.7);
+  padding: 16px 24px;
+  border-radius: 16px;
   font-family: Arial, sans-serif;
-}
-
-.block {
-  margin-bottom: 20px;
-}
-
-label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: bold;
-  text-align: center;
-}
-
-select, button {
-  width: 100%;
-  padding: 12px;
-  font-size: 18px;
-  border-radius: 8px;
-  border: none;
-  background: #2a2a2a;
   color: #fff;
+  text-shadow: 0 2px 6px #000;
 }
 
-select[multiple] {
-  height: 200px; /* делаем высоту мультиселекта */
-}
-
-button {
-  margin-top: 8px;
-  background: #c0392b;
-  cursor: pointer;
-}
-
-#lhDisplay {
-  margin-top: 8px;
-  text-align: center;
-  font-size: 20px;
+#line1 {
+  font-size: 32px;
   font-weight: bold;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+#line2 {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Анимация появления числа */
+.lh-number {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.8);
+  animation: fadeInUp 0.5s forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 </style>
 </head>
 
 <body>
 
-<div class="block">
-  <label>Номер игры</label>
-  <select id="gameSelect"></select>
-</div>
-
-<div class="block">
-  <label>Л.Х. (выберите до 3 чисел)</label>
-  <select id="lhSelect" multiple></select>
-
-  <div id="lhDisplay">Л.Х. —</div>
-
-  <button id="resetLH">Сбросить Л.Х.</button>
+<div id="panel">
+  <div id="line1">Игра 1</div>
+  <div id="line2">Л.Х. —</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -76,98 +70,49 @@ const SUPABASE_KEY = "sb_publishable_VKqWEzjk6vDmSyKMYz33ow_YoVtFnvW";
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const gameSelect = document.getElementById("gameSelect");
-const lhSelect = document.getElementById("lhSelect");
-const lhDisplay = document.getElementById("lhDisplay");
-const resetLH = document.getElementById("resetLH");
+const line1 = document.getElementById("line1");
+const line2 = document.getElementById("line2");
 
-let state;
+let previousLH = [];
 
-/* Заполняем списки */
-for (let i = 1; i <= 12; i++) {
-  gameSelect.add(new Option("Игра " + i, i));
-}
-for (let i = 1; i <= 10; i++) {
-  lhSelect.add(new Option(i, i));
-}
-
-/* Загрузка состояния из базы */
-async function load() {
+/* Обновление оверлея */
+async function update() {
   const { data } = await db
     .from("game_state")
     .select("*")
     .eq("id", 1)
     .single();
 
-  state = data;
+  if (!data) return;
 
-  gameSelect.value = state.game_number;
-  renderLH();
-  renderLHSelect();
-}
+  // Обновляем номер игры
+  line1.textContent = "Игра " + data.game_number;
 
-/* Отрисовка Л.Х. */
-function renderLH() {
-  const nums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
-  lhDisplay.textContent = nums.length
-    ? "Л.Х. " + nums.join(" ")
-    : "Л.Х. —";
-}
+  // Обновляем Л.Х.
+  const nums = [data.lh_1, data.lh_2, data.lh_3].filter(n => n !== null);
 
-/* Отмечаем выбранные числа в мультиселекте */
-function renderLHSelect() {
-  const selectedNums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
-  Array.from(lhSelect.options).forEach(opt => {
-    opt.selected = selectedNums.includes(Number(opt.value));
-  });
-}
+  // Если Л.Х. не изменилось — не делаем анимацию
+  if (nums.join() === previousLH.join()) return;
 
-/* Смена номера игры */
-gameSelect.onchange = async () => {
-  await db.from("game_state")
-    .update({ game_number: Number(gameSelect.value) })
-    .eq("id", 1);
-};
+  previousLH = nums;
 
-/* Выбор чисел Л.Х. */
-lhSelect.onchange = async () => {
-  const selectedOptions = Array.from(lhSelect.selectedOptions)
-    .map(opt => Number(opt.value));
+  line2.innerHTML = ""; // очистка
 
-  if (selectedOptions.length > 3) {
-    alert("Можно выбрать только 3 числа");
-    renderLHSelect();
-    return;
+  if (nums.length === 0) {
+    line2.textContent = "Л.Х. —";
+  } else {
+    nums.forEach(n => {
+      const span = document.createElement("span");
+      span.textContent = n;
+      span.className = "lh-number";
+      line2.appendChild(span);
+    });
   }
+}
 
-  const update = {
-    lh_1: selectedOptions[0] ?? null,
-    lh_2: selectedOptions[1] ?? null,
-    lh_3: selectedOptions[2] ?? null
-  };
-
-  await db.from("game_state")
-    .update(update)
-    .eq("id", 1);
-
-  state = { ...state, ...update };
-  renderLH();
-  renderLHSelect();
-};
-
-/* Сброс Л.Х. */
-resetLH.onclick = async () => {
-  await db.from("game_state")
-    .update({ lh_1: null, lh_2: null, lh_3: null })
-    .eq("id", 1);
-
-  state.lh_1 = state.lh_2 = state.lh_3 = null;
-  renderLH();
-  renderLHSelect();
-};
-
-/* Инициализация */
-load();
+/* Проверка каждые 0.5 секунды */
+setInterval(update, 500);
+update();
 </script>
 
 </body>
