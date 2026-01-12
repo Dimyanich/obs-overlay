@@ -5,53 +5,49 @@
 <title>Game Control</title>
 
 <style>
-/* Адаптивная верстка */
 body {
   margin: 0;
   padding: 12px;
   background: #0e0e0e;
   color: #fff;
   font-family: Arial, sans-serif;
-  font-size: clamp(12px, 2vw, 18px); /* текст подстраивается под экран */
 }
 
 .block {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 label {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   font-weight: bold;
   text-align: center;
-  font-size: clamp(14px, 2.5vw, 20px); /* заголовки масштабируются */
 }
 
 select, button {
   width: 100%;
-  padding: 8px;
-  font-size: clamp(12px, 2vw, 18px); /* адаптивный размер текста */
-  border-radius: 6px;
+  padding: 12px;
+  font-size: 18px;
+  border-radius: 8px;
   border: none;
   background: #2a2a2a;
   color: #fff;
 }
 
 select[multiple] {
-  height: auto;
-  max-height: 200px; /* не занимает весь экран */
+  height: 200px; /* делаем высоту мультиселекта */
 }
 
 button {
-  margin-top: 6px;
+  margin-top: 8px;
   background: #c0392b;
   cursor: pointer;
 }
 
 #lhDisplay {
-  margin-top: 6px;
+  margin-top: 8px;
   text-align: center;
-  font-size: clamp(14px, 2vw, 20px);
+  font-size: 20px;
   font-weight: bold;
 }
 </style>
