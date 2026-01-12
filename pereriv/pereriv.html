@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Перерыв OBS</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: white;
+    }
+    video, audio {
+      max-width: 80%;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Перерыв</h1>
+
+  <!-- Видео -->
+  <video id="video" controls autoplay loop muted>
+    <source src="video.mp4" type="video/mp4">
+    Ваш браузер не поддерживает видео.
+  </video>
+
+  <!-- Музыка -->
+  <audio id="audio" controls autoplay loop muted>
+    <source src="music.mp3" type="audio/mpeg">
+    Ваш браузер не поддерживает аудио.
+  </audio>
+</body>
+</html>
