@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Game Overlay</title>
+
 <style>
 html, body {
   margin: 0;
@@ -15,7 +16,7 @@ html, body {
   position: absolute;
   top: 20px;
   right: 20px;
-  background: rgba(0,0,0,0.8);
+  background: rgba(0, 0, 0, 0.8);
   padding: 14px 22px;
   border-radius: 14px;
   font-family: Arial, sans-serif;
@@ -26,20 +27,23 @@ html, body {
 }
 </style>
 </head>
+
 <body>
 
 <div id="panel">Игра 1</div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.28.0/dist/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://yctiaoltfmgehjdojhpk.supabase.co";
 const SUPABASE_KEY = "sb_publishable_VKqWEzjk6vDmSyKMYz33ow_YoVtFnvW";
-const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ⚠️ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ
+const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const panel = document.getElementById("panel");
 
-async function update() {
-  const { data } = await supabase
+async function updateGame() {
+  const { data, error } = await supabase
     .from("game_state")
     .select("game_number")
     .eq("id", 1)
@@ -50,9 +54,9 @@ async function update() {
   }
 }
 
-// обновляем раз в 0.5 сек
-setInterval(update, 500);
-update();
+// обновляем каждые 500 мс
+setInterval(updateGame, 500);
+updateGame();
 </script>
 
 </body>
