@@ -36,6 +36,11 @@ select, button {
   color: #fff;
 }
 
+select[multiple] {
+  height: auto;
+  max-height: 200px;
+}
+
 button {
   margin-top: 6px;
   background: #c0392b;
@@ -60,9 +65,7 @@ button {
 
 <div class="block">
   <label>Л.Х. (выберите до 3 чисел)</label>
-  <select id="lhSelect">
-    <option value="">Выберите число</option>
-  </select>
+  <select id="lhSelect" multiple></select>
 
   <div id="lhDisplay">Л.Х. —</div>
 
@@ -103,12 +106,21 @@ async function load() {
 
   gameSelect.value = state.game_number;
   renderLH();
+  renderLHSelect();
 }
 
 /* Отображение Л.Х. */
 function renderLH() {
   const nums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
   lhDisplay.textContent = nums.length ? "Л.Х. " + nums.join(" ") : "Л.Х. —";
+}
+
+/* Отмечаем выбранные числа в мультиселекте */
+function renderLHSelect() {
+  const selectedNums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
+  Array.from(lhSelect.options).forEach(opt => {
+    opt.selected = selectedNums.includes(Number(opt.value));
+  });
 }
 
 /* Смена номера игры */
@@ -118,35 +130,26 @@ gameSelect.onchange = async () => {
     .eq("id", 1);
 };
 
-/* Выбор числа Л.Х. */
+/* Выбор чисел Л.Х. */
 lhSelect.onchange = async () => {
-  const val = Number(lhSelect.value);
-  if (!val) return;
+  const selectedOptions = Array.from(lhSelect.selectedOptions).map(opt => Number(opt.value));
 
-  const nums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
-
-  if (nums.includes(val)) {
-    alert("Это число уже выбрано");
-    lhSelect.value = "";
+  if (selectedOptions.length > 3) {
+    alert("Можно выбрать только 3 числа");
+    renderLHSelect();
     return;
   }
 
-  if (state.lh_1 === null) state.lh_1 = val;
-  else if (state.lh_2 === null) state.lh_2 = val;
-  else if (state.lh_3 === null) state.lh_3 = val;
+  // обновляем state
+  state.lh_1 = selectedOptions[0] ?? null;
+  state.lh_2 = selectedOptions[1] ?? null;
+  state.lh_3 = selectedOptions[2] ?? null;
 
   await db.from("game_state")
     .update({ lh_1: state.lh_1, lh_2: state.lh_2, lh_3: state.lh_3 })
     .eq("id", 1);
 
   renderLH();
-
-  // Скрываем список только после третьего числа
-  if ([state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null).length === 3) {
-    lhSelect.style.display = "none";
-  } else {
-    lhSelect.value = ""; // сброс выбора для следующего числа
-  }
 };
 
 /* Сброс Л.Х. */
@@ -157,8 +160,7 @@ resetLH.onclick = async () => {
     .eq("id", 1);
 
   renderLH();
-  lhSelect.style.display = "block";
-  lhSelect.value = "";
+  renderLHSelect();
 };
 
 /* Инициализация */
