@@ -3,33 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <title>Game Control</title>
-
 <style>
 body {
   margin: 0;
-  padding: 12px;
+  padding: 8px;
   background: #0e0e0e;
   color: #fff;
   font-family: Arial, sans-serif;
-  font-size: clamp(12px, 2vw, 18px);
+  font-size: 14px;
+}
+
+.control-panel {
+  width: 250px;
+  padding: 8px;
+  background: #1b1b1b;
+  border-radius: 8px;
 }
 
 .block {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 label {
   display: block;
-  margin-bottom: 4px;
   font-weight: bold;
+  margin-bottom: 4px;
   text-align: center;
-  font-size: clamp(14px, 2.5vw, 20px);
 }
 
 select, button {
   width: 100%;
-  padding: 8px;
-  font-size: clamp(12px, 2vw, 18px);
+  padding: 6px;
+  font-size: 14px;
   border-radius: 6px;
   border: none;
   background: #2a2a2a;
@@ -43,32 +48,29 @@ button {
 }
 
 #lhDisplay {
-  margin-top: 6px;
+  margin-top: 4px;
   text-align: center;
-  font-size: clamp(14px, 2vw, 20px);
   font-weight: bold;
 }
 </style>
 </head>
-
 <body>
 
-<div class="block">
-  <label>Номер игры</label>
-  <select id="gameSelect">
-    <!-- Опции заполняются скриптом -->
-  </select>
-</div>
+<div class="control-panel">
+  <div class="block">
+    <label>Номер игры</label>
+    <select id="gameSelect"></select>
+  </div>
 
-<div class="block">
-  <label>Л.Х. (выберите до 3 чисел)</label>
-  <select id="lhSelect">
-    <option value="">Выберите число</option>
-  </select>
+  <div class="block">
+    <label>Л.Х. (выберите до 3 чисел)</label>
+    <select id="lhSelect">
+      <option value="">Выберите число</option>
+    </select>
 
-  <div id="lhDisplay">Л.Х. —</div>
-
-  <button id="resetLH">Сбросить Л.Х.</button>
+    <div id="lhDisplay">Л.Х. —</div>
+    <button id="resetLH">Сбросить Л.Х.</button>
+  </div>
 </div>
 
 <script>
@@ -80,12 +82,12 @@ const resetLH = document.getElementById("resetLH");
 /* Начальное состояние */
 let state = { game_number: 1, lh_1: null, lh_2: null, lh_3: null };
 
-/* Заполняем список номеров игры 1–12 */
+/* Заполняем список номеров игры */
 for (let i = 1; i <= 12; i++) {
   gameSelect.add(new Option("Игра " + i, i));
 }
 
-/* Заполняем список Л.Х. 1–10 */
+/* Заполняем список Л.Х. чисел 1–10 */
 for (let i = 1; i <= 10; i++) {
   lhSelect.add(new Option(i, i));
 }
@@ -96,28 +98,31 @@ function renderLH() {
   lhDisplay.textContent = nums.length ? "Л.Х. " + nums.join(" ") : "Л.Х. —";
 }
 
+/* Выбор номера игры */
+gameSelect.onchange = () => {
+  state.game_number = Number(gameSelect.value);
+  // Можно добавить синхронизацию с сервером здесь
+};
+
 /* Выбор числа Л.Х. */
 lhSelect.onchange = () => {
   const val = Number(lhSelect.value);
   if (!val) return;
 
   const nums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
-
-  // Проверка на повтор
   if (nums.includes(val)) {
     alert("Это число уже выбрано");
     lhSelect.value = "";
     return;
   }
 
-  // Добавляем в первую пустую ячейку
   if (state.lh_1 === null) state.lh_1 = val;
   else if (state.lh_2 === null) state.lh_2 = val;
   else if (state.lh_3 === null) state.lh_3 = val;
 
   renderLH();
 
-  // Скрываем список только после третьего числа
+  // Скрываем список только после выбора всех трех чисел
   if ([state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null).length === 3) {
     lhSelect.style.display = "none";
   } else {
@@ -132,6 +137,10 @@ resetLH.onclick = () => {
   lhSelect.style.display = "block";
   lhSelect.value = "";
 };
+
+/* Инициализация отображения */
+renderLH();
+gameSelect.value = state.game_number;
 </script>
 
 </body>
