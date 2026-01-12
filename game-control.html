@@ -5,14 +5,13 @@
 <title>Game Control</title>
 
 <style>
-/* Адаптивная верстка */
 body {
   margin: 0;
   padding: 12px;
   background: #0e0e0e;
   color: #fff;
   font-family: Arial, sans-serif;
-  font-size: clamp(12px, 2vw, 18px); /* текст подстраивается под экран */
+  font-size: clamp(12px, 2vw, 18px);
 }
 
 .block {
@@ -24,22 +23,17 @@ label {
   margin-bottom: 4px;
   font-weight: bold;
   text-align: center;
-  font-size: clamp(14px, 2.5vw, 20px); /* заголовки масштабируются */
+  font-size: clamp(14px, 2.5vw, 20px);
 }
 
 select, button {
   width: 100%;
   padding: 8px;
-  font-size: clamp(12px, 2vw, 18px); /* адаптивный размер текста */
+  font-size: clamp(12px, 2vw, 18px);
   border-radius: 6px;
   border: none;
   background: #2a2a2a;
   color: #fff;
-}
-
-select[multiple] {
-  height: auto;
-  max-height: 200px; /* не занимает весь экран */
 }
 
 button {
@@ -66,7 +60,9 @@ button {
 
 <div class="block">
   <label>Л.Х. (выберите до 3 чисел)</label>
-  <select id="lhSelect" multiple></select>
+  <select id="lhSelect">
+    <option value="">Выберите число</option>
+  </select>
 
   <div id="lhDisplay">Л.Х. —</div>
 
@@ -85,7 +81,7 @@ const lhSelect = document.getElementById("lhSelect");
 const lhDisplay = document.getElementById("lhDisplay");
 const resetLH = document.getElementById("resetLH");
 
-let state;
+let state = { game_number: 1, lh_1: null, lh_2: null, lh_3: null };
 
 /* Заполняем списки */
 for (let i = 1; i <= 12; i++) {
@@ -103,27 +99,16 @@ async function load() {
     .eq("id", 1)
     .single();
 
-  state = data;
+  if (data) state = { ...state, ...data };
 
   gameSelect.value = state.game_number;
   renderLH();
-  renderLHSelect();
 }
 
-/* Отрисовка Л.Х. */
+/* Отображение Л.Х. */
 function renderLH() {
   const nums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
-  lhDisplay.textContent = nums.length
-    ? "Л.Х. " + nums.join(" ")
-    : "Л.Х. —";
-}
-
-/* Отмечаем выбранные числа в мультиселекте */
-function renderLHSelect() {
-  const selectedNums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
-  Array.from(lhSelect.options).forEach(opt => {
-    opt.selected = selectedNums.includes(Number(opt.value));
-  });
+  lhDisplay.textContent = nums.length ? "Л.Х. " + nums.join(" ") : "Л.Х. —";
 }
 
 /* Смена номера игры */
@@ -133,41 +118,47 @@ gameSelect.onchange = async () => {
     .eq("id", 1);
 };
 
-/* Выбор чисел Л.Х. */
+/* Выбор числа Л.Х. */
 lhSelect.onchange = async () => {
-  const selectedOptions = Array.from(lhSelect.selectedOptions)
-    .map(opt => Number(opt.value));
+  const val = Number(lhSelect.value);
+  if (!val) return;
 
-  if (selectedOptions.length > 3) {
-    alert("Можно выбрать только 3 числа");
-    renderLHSelect();
+  const nums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
+
+  if (nums.includes(val)) {
+    alert("Это число уже выбрано");
+    lhSelect.value = "";
     return;
   }
 
-  const update = {
-    lh_1: selectedOptions[0] ?? null,
-    lh_2: selectedOptions[1] ?? null,
-    lh_3: selectedOptions[2] ?? null
-  };
+  if (state.lh_1 === null) state.lh_1 = val;
+  else if (state.lh_2 === null) state.lh_2 = val;
+  else if (state.lh_3 === null) state.lh_3 = val;
 
   await db.from("game_state")
-    .update(update)
+    .update({ lh_1: state.lh_1, lh_2: state.lh_2, lh_3: state.lh_3 })
     .eq("id", 1);
 
-  state = { ...state, ...update };
   renderLH();
-  renderLHSelect();
+
+  // Скрываем список только после выбора третьего числа
+  if ([state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null).length === 3) {
+    lhSelect.style.display = "none";
+  } else {
+    lhSelect.value = ""; // сброс выбора для следующего числа
+  }
 };
 
 /* Сброс Л.Х. */
 resetLH.onclick = async () => {
+  state.lh_1 = state.lh_2 = state.lh_3 = null;
   await db.from("game_state")
     .update({ lh_1: null, lh_2: null, lh_3: null })
     .eq("id", 1);
 
-  state.lh_1 = state.lh_2 = state.lh_3 = null;
   renderLH();
-  renderLHSelect();
+  lhSelect.style.display = "block";
+  lhSelect.value = "";
 };
 
 /* Инициализация */
