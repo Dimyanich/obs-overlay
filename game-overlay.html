@@ -1,3 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Game Overlay</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+#panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0,0,0,0.7);
+  padding: 16px 24px;
+  border-radius: 16px;
+  font-family: Arial, sans-serif;
+  color: #fff;
+  text-shadow: 0 2px 6px #000;
+}
+
+#line1 {
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+#line2 {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Анимация появления числа */
+.lh-number {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.8);
+  animation: fadeInUp 0.5s forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="panel">
+  <div id="line1">Игра 1</div>
+  <div id="line2">Л.Х. —</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://yctiaoltfmgehjdojhpk.supabase.co";
+const SUPABASE_KEY = "sb_publishable_VKqWEzjk6vDmSyKMYz33ow_YoVtFnvW";
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const line1 = document.getElementById("line1");
+const line2 = document.getElementById("line2");
+
+let previousLH = [];
+
+/* Обновление оверлея */
 async function update() {
   const { data } = await db
     .from("game_state")
@@ -23,16 +101,25 @@ async function update() {
   if (nums.length === 0) {
     line2.textContent = "Л.Х. —";
   } else {
-    // Добавляем надпись "Л.Х." перед цифрами
-    const prefix = document.createElement("span");
-    prefix.textContent = "Л.Х. ";
-    line2.appendChild(prefix);
+    // Создаём один контейнер для префикса + чисел
+    const container = document.createElement("span");
+    container.textContent = "Л.Х. "; // префикс
 
     nums.forEach(n => {
       const span = document.createElement("span");
       span.textContent = n;
       span.className = "lh-number";
-      line2.appendChild(span);
+      container.appendChild(span);
     });
+
+    line2.appendChild(container);
   }
 }
+
+/* Проверка каждые 0.5 секунды */
+setInterval(update, 500);
+update();
+</script>
+
+</body>
+</html>
