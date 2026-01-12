@@ -36,11 +36,6 @@ select, button {
   color: #fff;
 }
 
-select[multiple] {
-  height: auto;
-  max-height: 200px;
-}
-
 button {
   margin-top: 6px;
   background: #c0392b;
@@ -60,53 +55,39 @@ button {
 
 <div class="block">
   <label>Номер игры</label>
-  <select id="gameSelect"></select>
+  <select id="gameSelect">
+    <!-- Опции заполняются скриптом -->
+  </select>
 </div>
 
 <div class="block">
   <label>Л.Х. (выберите до 3 чисел)</label>
-  <select id="lhSelect" multiple></select>
+  <select id="lhSelect">
+    <option value="">Выберите число</option>
+  </select>
 
   <div id="lhDisplay">Л.Х. —</div>
 
   <button id="resetLH">Сбросить Л.Х.</button>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = "https://yctiaoltfmgehjdojhpk.supabase.co";
-const SUPABASE_KEY = "sb_publishable_VKqWEzjk6vDmSyKMYz33ow_YoVtFnvW";
-
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 const gameSelect = document.getElementById("gameSelect");
 const lhSelect = document.getElementById("lhSelect");
 const lhDisplay = document.getElementById("lhDisplay");
 const resetLH = document.getElementById("resetLH");
 
+/* Начальное состояние */
 let state = { game_number: 1, lh_1: null, lh_2: null, lh_3: null };
 
-/* Заполняем списки */
+/* Заполняем список номеров игры 1–12 */
 for (let i = 1; i <= 12; i++) {
   gameSelect.add(new Option("Игра " + i, i));
 }
+
+/* Заполняем список Л.Х. 1–10 */
 for (let i = 1; i <= 10; i++) {
   lhSelect.add(new Option(i, i));
-}
-
-/* Загрузка состояния из базы */
-async function load() {
-  const { data } = await db
-    .from("game_state")
-    .select("*")
-    .eq("id", 1)
-    .single();
-
-  if (data) state = { ...state, ...data };
-
-  gameSelect.value = state.game_number;
-  renderLH();
-  renderLHSelect();
 }
 
 /* Отображение Л.Х. */
@@ -115,56 +96,42 @@ function renderLH() {
   lhDisplay.textContent = nums.length ? "Л.Х. " + nums.join(" ") : "Л.Х. —";
 }
 
-/* Отмечаем выбранные числа в мультиселекте */
-function renderLHSelect() {
-  const selectedNums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
-  Array.from(lhSelect.options).forEach(opt => {
-    opt.selected = selectedNums.includes(Number(opt.value));
-  });
-}
+/* Выбор числа Л.Х. */
+lhSelect.onchange = () => {
+  const val = Number(lhSelect.value);
+  if (!val) return;
 
-/* Смена номера игры */
-gameSelect.onchange = async () => {
-  await db.from("game_state")
-    .update({ game_number: Number(gameSelect.value) })
-    .eq("id", 1);
-};
+  const nums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
 
-/* Выбор чисел Л.Х. */
-lhSelect.onchange = async () => {
-  const selectedOptions = Array.from(lhSelect.selectedOptions).map(opt => Number(opt.value));
-
-  if (selectedOptions.length > 3) {
-    alert("Можно выбрать только 3 числа");
-    renderLHSelect();
+  // Проверка на повтор
+  if (nums.includes(val)) {
+    alert("Это число уже выбрано");
+    lhSelect.value = "";
     return;
   }
 
-  // обновляем state
-  state.lh_1 = selectedOptions[0] ?? null;
-  state.lh_2 = selectedOptions[1] ?? null;
-  state.lh_3 = selectedOptions[2] ?? null;
-
-  await db.from("game_state")
-    .update({ lh_1: state.lh_1, lh_2: state.lh_2, lh_3: state.lh_3 })
-    .eq("id", 1);
+  // Добавляем в первую пустую ячейку
+  if (state.lh_1 === null) state.lh_1 = val;
+  else if (state.lh_2 === null) state.lh_2 = val;
+  else if (state.lh_3 === null) state.lh_3 = val;
 
   renderLH();
+
+  // Скрываем список только после третьего числа
+  if ([state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null).length === 3) {
+    lhSelect.style.display = "none";
+  } else {
+    lhSelect.value = ""; // сброс выбора для следующего числа
+  }
 };
 
 /* Сброс Л.Х. */
-resetLH.onclick = async () => {
+resetLH.onclick = () => {
   state.lh_1 = state.lh_2 = state.lh_3 = null;
-  await db.from("game_state")
-    .update({ lh_1: null, lh_2: null, lh_3: null })
-    .eq("id", 1);
-
   renderLH();
-  renderLHSelect();
+  lhSelect.style.display = "block";
+  lhSelect.value = "";
 };
-
-/* Инициализация */
-load();
 </script>
 
 </body>
