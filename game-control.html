@@ -141,7 +141,7 @@ lhSelect.onchange = async () => {
 
   renderLH();
 
-  // Скрываем список только после выбора третьего числа
+  // Скрываем список только после третьего числа
   if ([state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null).length === 3) {
     lhSelect.style.display = "none";
   } else {
