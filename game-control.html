@@ -2,65 +2,69 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Game Overlay</title>
+<title>Game Control</title>
 
 <style>
-html, body {
+body {
   margin: 0;
-  padding: 0;
-  background: transparent;
-  overflow: hidden;
-}
-
-#panel {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(0,0,0,0.7);
-  padding: 16px 24px;
-  border-radius: 16px;
-  font-family: Arial, sans-serif;
+  padding: 12px;
+  background: #0e0e0e;
   color: #fff;
-  text-shadow: 0 2px 6px #000;
+  font-family: Arial, sans-serif;
 }
 
-#line1 {
-  font-size: 32px;
+.block {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 8px;
 }
 
-#line2 {
-  font-size: 24px;
-  font-weight: bold;
+select, button {
+  width: 100%;
+  padding: 12px;
+  font-size: 18px;
+  border-radius: 8px;
+  border: none;
+  background: #2a2a2a;
+  color: #fff;
+}
+
+button {
+  margin-top: 8px;
+  background: #c0392b;
+  cursor: pointer;
+}
+
+#lhDisplay {
+  margin-top: 8px;
   text-align: center;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
-
-/* Анимация появления числа */
-.lh-number {
-  opacity: 0;
-  transform: translateY(-20px) scale(0.8);
-  animation: fadeInUp 0.5s forwards;
-}
-
-@keyframes fadeInUp {
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  font-size: 20px;
+  font-weight: bold;
 }
 </style>
 </head>
 
 <body>
 
-<div id="panel">
-  <div id="line1">Игра 1</div>
-  <div id="line2">Л.Х. —</div>
+<div class="block">
+  <label>Номер игры</label>
+  <select id="gameSelect"></select>
+</div>
+
+<div class="block">
+  <label>Л.Х.</label>
+  <select id="lhSelect">
+    <option value="">— выбрать число —</option>
+  </select>
+
+  <div id="lhDisplay">Л.Х. —</div>
+
+  <button id="resetLH">Сбросить Л.Х.</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -70,49 +74,95 @@ const SUPABASE_KEY = "sb_publishable_VKqWEzjk6vDmSyKMYz33ow_YoVtFnvW";
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const line1 = document.getElementById("line1");
-const line2 = document.getElementById("line2");
+const gameSelect = document.getElementById("gameSelect");
+const lhSelect = document.getElementById("lhSelect");
+const lhDisplay = document.getElementById("lhDisplay");
+const resetLH = document.getElementById("resetLH");
 
-let previousLH = [];
+/* Заполняем списки */
+for (let i = 1; i <= 12; i++) {
+  gameSelect.add(new Option("Игра " + i, i));
+}
+for (let i = 1; i <= 10; i++) {
+  lhSelect.add(new Option(i, i));
+}
 
-/* Обновление оверлея */
-async function update() {
+let state;
+
+/* Загрузка состояния из базы */
+async function load() {
   const { data } = await db
     .from("game_state")
     .select("*")
     .eq("id", 1)
     .single();
 
-  if (!data) return;
+  state = data;
 
-  // Обновляем номер игры
-  line1.textContent = "Игра " + data.game_number;
-
-  // Обновляем Л.Х.
-  const nums = [data.lh_1, data.lh_2, data.lh_3].filter(n => n !== null);
-
-  // Если Л.Х. не изменилось — не делаем анимацию
-  if (nums.join() === previousLH.join()) return;
-
-  previousLH = nums;
-
-  line2.innerHTML = ""; // очистка
-
-  if (nums.length === 0) {
-    line2.textContent = "Л.Х. —";
-  } else {
-    nums.forEach(n => {
-      const span = document.createElement("span");
-      span.textContent = n;
-      span.className = "lh-number";
-      line2.appendChild(span);
-    });
-  }
+  gameSelect.value = state.game_number;
+  renderLH();
 }
 
-/* Проверка каждые 0.5 секунды */
-setInterval(update, 500);
-update();
+/* Отрисовка Л.Х. */
+function renderLH() {
+  const nums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
+  lhDisplay.textContent = nums.length
+    ? "Л.Х. " + nums.join(" ")
+    : "Л.Х. —";
+}
+
+/* Смена номера игры */
+gameSelect.onchange = async () => {
+  await db.from("game_state")
+    .update({ game_number: Number(gameSelect.value) })
+    .eq("id", 1);
+};
+
+/* Выбор числа Л.Х. */
+lhSelect.onchange = async () => {
+  const val = Number(lhSelect.value);
+  if (!val) return;
+
+  const nums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
+
+  if (nums.includes(val)) {
+    alert("Это число уже выбрано");
+    lhSelect.value = "";
+    return;
+  }
+
+  if (nums.length >= 3) {
+    alert("Можно выбрать только 3 числа");
+    lhSelect.value = "";
+    return;
+  }
+
+  let update = {};
+  if (state.lh_1 === null) update.lh_1 = val;
+  else if (state.lh_2 === null) update.lh_2 = val;
+  else update.lh_3 = val;
+
+  await db.from("game_state")
+    .update(update)
+    .eq("id", 1);
+
+  state = { ...state, ...update };
+  renderLH();
+  lhSelect.value = "";
+};
+
+/* Сброс Л.Х. */
+resetLH.onclick = async () => {
+  await db.from("game_state")
+    .update({ lh_1: null, lh_2: null, lh_3: null })
+    .eq("id", 1);
+
+  state.lh_1 = state.lh_2 = state.lh_3 = null;
+  renderLH();
+};
+
+/* Инициализация */
+load();
 </script>
 
 </body>
