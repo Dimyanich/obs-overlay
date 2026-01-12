@@ -22,7 +22,7 @@ html, body {
   font-family: Arial, sans-serif;
   font-size: 28px;
   font-weight: bold;
-  color: #fff;
+  color: #ffffff;
   text-shadow: 0 2px 6px #000;
 }
 </style>
@@ -32,31 +32,42 @@ html, body {
 
 <div id="panel">Игра 1</div>
 
+<!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+/* === НАСТРОЙКИ SUPABASE === */
 const SUPABASE_URL = "https://yctiaoltfmgehjdojhpk.supabase.co";
 const SUPABASE_KEY = "sb_publishable_VKqWEzjk6vDmSyKMYz33ow_YoVtFnvW";
 
-// ⚠️ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
+/* === ПРАВИЛЬНОЕ СОЗДАНИЕ КЛИЕНТА === */
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const panel = document.getElementById("panel");
 
-async function updateGame() {
-  const { data, error } = await supabase
+/* === ЗАГРУЗКА НОМЕРА ИГРЫ === */
+async function loadGame() {
+  const { data, error } = await db
     .from("game_state")
     .select("game_number")
     .eq("id", 1)
     .single();
 
-  if (data) {
+  if (error) {
+    console.error("Supabase error:", error);
+    return;
+  }
+
+  if (data && typeof data.game_number === "number") {
     panel.textContent = "Игра " + data.game_number;
   }
 }
 
-// обновляем каждые 500 мс
-setInterval(updateGame, 500);
-updateGame();
+/* === ОБНОВЛЕНИЕ КАЖДЫЕ 500 МС === */
+setInterval(loadGame, 500);
+
+/* === ПЕРВЫЙ ЗАПУСК === */
+loadGame();
 </script>
 
 </body>
