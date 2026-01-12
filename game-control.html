@@ -5,45 +5,53 @@
 <title>Game Control</title>
 
 <style>
+/* Адаптивная верстка */
 body {
   margin: 0;
   padding: 12px;
   background: #0e0e0e;
   color: #fff;
   font-family: Arial, sans-serif;
+  font-size: clamp(12px, 2vw, 18px); /* текст подстраивается под экран */
 }
 
 .block {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 label {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   font-weight: bold;
   text-align: center;
+  font-size: clamp(14px, 2.5vw, 20px); /* заголовки масштабируются */
 }
 
 select, button {
   width: 100%;
-  padding: 12px;
-  font-size: 18px;
-  border-radius: 8px;
+  padding: 8px;
+  font-size: clamp(12px, 2vw, 18px); /* адаптивный размер текста */
+  border-radius: 6px;
   border: none;
   background: #2a2a2a;
   color: #fff;
 }
 
+select[multiple] {
+  height: auto;
+  max-height: 200px; /* не занимает весь экран */
+}
+
 button {
-  margin-top: 8px;
+  margin-top: 6px;
   background: #c0392b;
   cursor: pointer;
 }
 
 #lhDisplay {
-  margin-top: 8px;
+  margin-top: 6px;
   text-align: center;
-  font-size: 20px;
+  font-size: clamp(14px, 2vw, 20px);
   font-weight: bold;
 }
 </style>
@@ -57,10 +65,8 @@ button {
 </div>
 
 <div class="block">
-  <label>Л.Х.</label>
-  <select id="lhSelect">
-    <option value="">— выбрать число —</option>
-  </select>
+  <label>Л.Х. (выберите до 3 чисел)</label>
+  <select id="lhSelect" multiple></select>
 
   <div id="lhDisplay">Л.Х. —</div>
 
@@ -79,6 +85,8 @@ const lhSelect = document.getElementById("lhSelect");
 const lhDisplay = document.getElementById("lhDisplay");
 const resetLH = document.getElementById("resetLH");
 
+let state;
+
 /* Заполняем списки */
 for (let i = 1; i <= 12; i++) {
   gameSelect.add(new Option("Игра " + i, i));
@@ -86,8 +94,6 @@ for (let i = 1; i <= 12; i++) {
 for (let i = 1; i <= 10; i++) {
   lhSelect.add(new Option(i, i));
 }
-
-let state;
 
 /* Загрузка состояния из базы */
 async function load() {
@@ -101,6 +107,7 @@ async function load() {
 
   gameSelect.value = state.game_number;
   renderLH();
+  renderLHSelect();
 }
 
 /* Отрисовка Л.Х. */
@@ -111,6 +118,14 @@ function renderLH() {
     : "Л.Х. —";
 }
 
+/* Отмечаем выбранные числа в мультиселекте */
+function renderLHSelect() {
+  const selectedNums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
+  Array.from(lhSelect.options).forEach(opt => {
+    opt.selected = selectedNums.includes(Number(opt.value));
+  });
+}
+
 /* Смена номера игры */
 gameSelect.onchange = async () => {
   await db.from("game_state")
@@ -118,29 +133,22 @@ gameSelect.onchange = async () => {
     .eq("id", 1);
 };
 
-/* Выбор числа Л.Х. */
+/* Выбор чисел Л.Х. */
 lhSelect.onchange = async () => {
-  const val = Number(lhSelect.value);
-  if (!val) return;
+  const selectedOptions = Array.from(lhSelect.selectedOptions)
+    .map(opt => Number(opt.value));
 
-  const nums = [state.lh_1, state.lh_2, state.lh_3].filter(n => n !== null);
-
-  if (nums.includes(val)) {
-    alert("Это число уже выбрано");
-    lhSelect.value = "";
-    return;
-  }
-
-  if (nums.length >= 3) {
+  if (selectedOptions.length > 3) {
     alert("Можно выбрать только 3 числа");
-    lhSelect.value = "";
+    renderLHSelect();
     return;
   }
 
-  let update = {};
-  if (state.lh_1 === null) update.lh_1 = val;
-  else if (state.lh_2 === null) update.lh_2 = val;
-  else update.lh_3 = val;
+  const update = {
+    lh_1: selectedOptions[0] ?? null,
+    lh_2: selectedOptions[1] ?? null,
+    lh_3: selectedOptions[2] ?? null
+  };
 
   await db.from("game_state")
     .update(update)
@@ -148,7 +156,7 @@ lhSelect.onchange = async () => {
 
   state = { ...state, ...update };
   renderLH();
-  lhSelect.value = "";
+  renderLHSelect();
 };
 
 /* Сброс Л.Х. */
@@ -159,6 +167,7 @@ resetLH.onclick = async () => {
 
   state.lh_1 = state.lh_2 = state.lh_3 = null;
   renderLH();
+  renderLHSelect();
 };
 
 /* Инициализация */
