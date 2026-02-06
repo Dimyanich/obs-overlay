@@ -4,7 +4,7 @@
 const playersData = [
   { name: "Аннабель", img: "photos/1.png" },
   { name: "Пифа", img: "photos/2.png" },
-  { name: "Линда", img: "photos/3.png" },
+  { name: "Балтика", img: "photos/3.png" },
   { name: "Интрига", img: "photos/4.png" },
   { name: "Черешня", img: "photos/5.png" },
   { name: "Суетолог", img: "photos/6.png" },
