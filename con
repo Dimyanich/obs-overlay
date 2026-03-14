@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Overlay Control</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#111;
+    color:#fff;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:600px;
+    margin:auto;
+}
+
+input,button{
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    font-size:16px;
+}
+
+button{
+    cursor:pointer;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Overlay Control Panel</h2>
+
+<label>Text 1</label>
+<input id="text1" type="text">
+
+<label>Text 2</label>
+<input id="text2" type="text">
+
+<label>Text 3</label>
+<input id="text3" type="text">
+
+<button onclick="updateOverlay()">Update Overlay</button>
+
+</div>
+
+<script>
+
+function updateOverlay(){
+
+localStorage.setItem(
+"text1",
+document.getElementById("text1").value
+)
+
+localStorage.setItem(
+"text2",
+document.getElementById("text2").value
+)
+
+localStorage.setItem(
+"text3",
+document.getElementById("text3").value
+)
+
+}
+
+</script>
+
+</body>
+</html>
